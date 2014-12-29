@@ -7,11 +7,25 @@ class Webserver
 		@app = app
 	end
 
+	def prefork(numbers)
+		numbers.times do
+			fork do
+				puts "forked #{Process.pid}"
+				start
+			end
+		end
+
+		Process.waitall
+	end
+
+
 	def start
 		loop do
 			socket = @server.accept
-			connection = Connection.new socket, @app
-			connection.process
+			Thread.new do
+				connection = Connection.new socket, @app
+				connection.process
+			end
 		end
 	end
 
@@ -89,4 +103,5 @@ end
 
 app = Webserver::Builder.process('config.ru')
 server = Webserver.new 3000, app
-server.start
+# server.start
+server.prefork 3
